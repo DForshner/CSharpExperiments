@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+		<title>Awesome? Webserver</title>
+			<style type="text/css">
+			div.dataTables_length {
+			float: left;
+			}		
+			div.dataTables_filter {
+				float: right;
+			}
+			div.dataTables_info {
+			padding: 9px 6px 6px 6px;
+			float: left;
+			}
+			.dataTables_paginate {
+				width: 44px; height:19px;
+				float: right;
+				text-align: right;
+			}
+			.paging_two_button {
+				cursor: pointer;
+			}
+			</style>
+	</head>
+    <body>
+        <button id="btn">Show Table</button>
+        <div id="message" style="display:none">
+			<div id="container" style="width:800px; margin:0 auto;">
+			<table id="table1" style="margin:20px 0px 20px 0px;">
+				<thead>
+				<tr><th>ColumnA</th><th>ColumnB</th><th>ColumnC</th</tr>
+				</thead>
+				<tbody>
+					<tr><td></td><td></td><td></td</tr>
+				</tbody>
+				</table>
+			</div>
+        </div>
+       
+        <script src="http://ajax.aspnetcdn.com/ajax/jquery/jquery-1.9.0.min.js"></script>
+		<script src="http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/jquery.dataTables.min.js"></script>
+        <script>   
+            function domReady() {  
+                $('#btn').click( showTable );  
+            }
+			
+            function showTable() {
+                $('#message').fadeIn('slow');				
+				
+				$("#table1").dataTable().fnDestroy(); 
+				
+				$.ajax({
+					type: "GET",
+					url: "/GetTableData/",
+					contentType: "text; charset=utf-8",
+					success: function (data) {
+						console.log(data);
+						var json = jQuery.parseJSON(data);
+						console.log(json.aaData);
+						$('#table1').dataTable({
+							"aaData": json.aaData,
+						});
+					}
+				});	
+            }
+            $( domReady );
+        </script>  
+    </body>  
+</html> 
