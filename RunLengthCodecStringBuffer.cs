@@ -25,7 +25,7 @@ namespace RunLengthCodecStringBuffer
             int count = 0;
             foreach (char c in str)
             {
-                Debug.Assert(!Regex.Match(c.ToString(), "[0-9]").Success, "Numbers are not currently supported.");
+                Debug.Assert(!Regex.Match(new string(new char [] { c }), "[0-9]").Success, "Numeric characters are not currently supported.");
 
                 // If the current char is the same as the last char.
                 if (c == lastChar)

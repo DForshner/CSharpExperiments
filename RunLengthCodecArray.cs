@@ -1,5 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 // Perform run length encoding/decoding on repeated characters in a string in O(n) time.
 // TODO:
@@ -28,6 +30,8 @@ namespace RunLengthCodecArray
             int current = 0;
             foreach(var c in buff)
             {
+                Debug.Assert(!Regex.Match(new string(new char [] { c }), "[0-9]").Success, "Numeric characters are not currently supported.");
+
                 if (c == lastChar)
                 {
                     count++;
@@ -37,7 +41,7 @@ namespace RunLengthCodecArray
                     // Write out any counts from last character
                     if (count > 0)
                     {
-                        newBuff[current++] = count.ToString()[0];
+                        newBuff[current++] = Convert.ToChar(count);
                         count = 0;
                     }
 
@@ -49,7 +53,7 @@ namespace RunLengthCodecArray
             // Write out any remaining counts from last char
             if (count > 0)
             {
-                newBuff[current++] = count.ToString()[0];
+                newBuff[current++] = Convert.ToChar(count);
             }
                 
             return newBuff;
@@ -58,7 +62,6 @@ namespace RunLengthCodecArray
         public static int UnneededChars(char[] buff)
         {
             int totalCount = 0;
-
             int currentCount = 0;
             Nullable<char> lastChar = null;
             foreach(char c in buff)
@@ -82,6 +85,10 @@ namespace RunLengthCodecArray
 
         public static int NumberOfCharsToDisplayCountDigits(int count)
         {
+            // PERF: Hard code common cases
+            if (count == 0) { return 0; }
+            if (count < 10) { return 1; }
+
             var digits = 0;
             var newCount = count;
             while (count >= 1)
