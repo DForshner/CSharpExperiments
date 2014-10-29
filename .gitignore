@@ -39,23 +39,41 @@ local.properties
 # User-specific files
 *.suo
 *.user
+*.userosscache
 *.sln.docstates
 
 # Build results
 
 [Dd]ebug/
+[Dd]ebugPublic/
 [Rr]elease/
+[Rr]eleases/
 x64/
+x86/
 build/
+bld/
 [Bb]in/
 [Oo]bj/
+
+# Roslyn cache directories
+*.ide/
 
 # MSTest test Results
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
 
+#NUNIT
+*.VisualState.xml
+TestResult.xml
+
+# Build Results of an ATL Project
+[Dd]ebugPS/
+[Rr]eleasePS/
+dlldata.c
+
 *_i.c
 *_p.c
+*_i.h
 *.ilk
 *.meta
 *.obj
@@ -75,8 +93,11 @@ build/
 *.vssscc
 .builds
 *.pidb
-*.log
+*.svclog
 *.scc
+
+# Chutzpah Test files
+_Chutzpah*
 
 # Visual C++ cache files
 ipch/
@@ -91,12 +112,16 @@ ipch/
 *.vsp
 *.vspx
 
+# TFS 2012 Local Workspace
+$tf/
+
 # Guidance Automation Toolkit
 *.gpState
 
 # ReSharper is a .NET coding add-in
 _ReSharper*/
 *.[Rr]e[Ss]harper
+*.DotSettings.user
 
 # TeamCity is a build add-in
 _TeamCity*
@@ -125,12 +150,21 @@ DocProject/Help/html
 publish/
 
 # Publish Web Output
-*.Publish.xml
+*.[Pp]ublish.xml
+*.azurePubxml
+# TODO: Comment the next line if you want to checkin your web deploy settings 
+# but database connection strings (with potential passwords) will be unencrypted
 *.pubxml
+*.publishproj
 
-# NuGet Packages Directory
-## TODO: If you have NuGet Package Restore enabled, uncomment the next line
-#packages/
+# NuGet Packages
+*.nupkg
+# The packages folder can be ignored because of Package Restore
+**/packages/*
+# except build/, which is used as an MSBuild target.
+!**/packages/build/
+# If using the old MSBuild-Integrated Package Restore, uncomment this:
+#!**/packages/repositories.config
 
 # Windows Azure Build Output
 csx
@@ -164,6 +198,14 @@ UpgradeLog*.htm
 # SQL Server files
 App_Data/*.mdf
 App_Data/*.ldf
+
+# Business Intelligence projects
+*.rdl.data
+*.bim.layout
+*.bim_*.settings
+
+# Microsoft Fakes
+FakesAssemblies/
 
 #############
 ## Windows detritus
