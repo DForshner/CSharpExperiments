@@ -15,7 +15,7 @@ namespace MergeSort
             if (toSort == null) { throw new ArgumentNullException(); }
             SortPartition(toSort, 0, toSort.Count() - 1);
         }
-       
+
         private static void SortPartition(int[] toSort, int left, int right)
         {
             // Base case
