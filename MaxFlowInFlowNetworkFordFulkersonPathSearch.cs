@@ -4,9 +4,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-// Find the maximal flow for a given flow network using the ford-fulkerson augmenting path search method.
+// Find the maximal flow for a given flow network using the Ford-Fulkerson augmenting path search method.
 //
-// TODO: Needs testing and bug fixes.
+// As flows are integers this algorithm is guaranteed to complete with O(Ef) complexity.  Where E is
+// the number of edges and f is the maximum flow.  In the worst case we would visit every edge (E) and
+// increment its flow by one f times.
 
 namespace MaxFlowInFlowNetworkFordFulkersonPathSearch
 {
@@ -34,7 +36,7 @@ namespace MaxFlowInFlowNetworkFordFulkersonPathSearch
 
                 var minFlowOnPath = FindMinFlowOnPath(path, networkToUpdate);
 
-                AugmentFlowsOnPath(path, networkToUpdate, minFlowOnPath);
+                AugmentFlowsOnPath(path, minFlowOnPath, networkToUpdate);
             }
 
             return atLeastOnePathFound;
@@ -44,12 +46,12 @@ namespace MaxFlowInFlowNetworkFordFulkersonPathSearch
         /// Search backwards along path to find the edge that can accept the 
         /// least amount (limiting case) of increased flow on the current path.
         /// </summary>
-        private static int FindMinFlowOnPath(IList<Step> path, FlowNetwork networkToUpdate)
+        protected static int FindMinFlowOnPath(IList<Step> path, FlowNetwork network)
         {
             int minFlowOnPath = int.MaxValue;
 
-            int v = networkToUpdate.SinkIndex;
-            while (v != networkToUpdate.SourceIndex)
+            int v = network.SinkIndex;
+            while (v != network.SourceIndex)
             {
                 int u = path[v].Previous;
 
@@ -57,13 +59,13 @@ namespace MaxFlowInFlowNetworkFordFulkersonPathSearch
                 if (path[v].Forward)
                 {
                     // Forward edges can be adjusted by the remaining capacity.
-                    var edge = networkToUpdate.FindEdge(u, v);
+                    var edge = network.FindEdge(u, v);
                     available = edge.Capacity - edge.Flow;
                 }
                 else
                 {
                     // Backwards edges can only be reduced by their existing flow.
-                    var edge = networkToUpdate.FindEdge(v, u);
+                    var edge = network.FindEdge(v, u);
                     available = edge.Flow;
                 }
 
@@ -80,7 +82,7 @@ namespace MaxFlowInFlowNetworkFordFulkersonPathSearch
         /// <summary>
         /// Augment the flows along the path with the lowest amount of flow found earlier. 
         /// </summary>
-        private static void AugmentFlowsOnPath(IList<Step> path, FlowNetwork networkToUpdate, int minFlowOnPath)
+        protected static void AugmentFlowsOnPath(IList<Step> path, int minFlowOnPath, FlowNetwork networkToUpdate)
         {
             int v = networkToUpdate.SinkIndex;
             while (v != networkToUpdate.SourceIndex)
@@ -101,10 +103,127 @@ namespace MaxFlowInFlowNetworkFordFulkersonPathSearch
         }
     }
 
+    [TestClass]
+    public class MaxFlowCalculatorTests
+    {
+        private class TestCalc : MaxFlowCalculator
+        {
+            public static int TestFindMinFlowOnPath(IList<Step> path, FlowNetwork network)
+            {
+                return FindMinFlowOnPath(path, network);
+            }
+
+            public static void TestAugmentFlowsOnPath(IList<Step> path, int minFlowOnPath, FlowNetwork networkToUpdate)
+            {
+                AugmentFlowsOnPath(path, minFlowOnPath, networkToUpdate);
+            }
+        }
+
+        [TestMethod]
+        public void WhenPathHasVertexWithFiveAndTwoAvailable_ExpectMinFlowIsTwo()
+        {
+            var edges = new[] 
+            {
+                Tuple.Create(0, 1, 10),
+                Tuple.Create(1, 2, 10),
+            };
+            var network = new FlowNetwork(edges, 0, 2);
+            network.AddFlow(0, 1, 5); // Available: 5 
+            network.AddFlow(1, 2, 8); // Available: 2
+
+            var path = new[]
+            {
+                new Step { Forward = true, Previous = -1 }, // [0]
+                new Step { Forward = true, Previous = 0 }, // [1]
+                new Step { Forward = true, Previous = 1 }, // [2]
+            };
+           
+            var result = TestCalc.TestFindMinFlowOnPath(path, network);
+
+            Assert.AreEqual(2, result);
+        }
+
+        [TestMethod]
+        public void WhenBackwardsStepHasLowestFlow_ExpectBackwardsFlowIsMinFlow()
+        {
+            var edges = new[] 
+            {
+                Tuple.Create(0, 1, 4),
+                Tuple.Create(1, 2, 4),
+                Tuple.Create(2, 4, 4),
+                Tuple.Create(3, 2, 4),
+                Tuple.Create(3, 4, 4),
+            };
+            var network = new FlowNetwork(edges, 0, 4);
+            network.AddFlow(1, 2, 1);
+            network.AddFlow(3, 2, 1);
+            network.AddFlow(3, 4, 2);
+
+            var path = new[]
+            {
+                new Step { Forward = true, Previous = -1 }, // 0->X 
+                new Step { Forward = true, Previous = 0 }, // 1->0
+                new Step { Forward = true, Previous = 1 }, // 2->1 Available: 4 - 1 = 3 
+                new Step { Forward = false, Previous = 2 }, // 3->2 Available: 1 
+                new Step { Forward = true, Previous = 3 }, // 4->3 Available: 4 - 2 = 1 
+            };
+
+            var result = TestCalc.TestFindMinFlowOnPath(path, network);
+
+            Assert.AreEqual(1, result);
+        }
+
+        [TestMethod]
+        public void WhenAugmentPathByTwo_ExpecForwardEdgesHaveFlowIncreased()
+        {
+            var edges = new[] 
+            {
+                Tuple.Create(0, 1, 10),
+                Tuple.Create(1, 2, 10),
+            };
+            var network = new FlowNetwork(edges, 0, 2);
+            var path = new[]
+            {
+                new Step { Forward = true, Previous = -1 }, // 0->X
+                new Step { Forward = true, Previous = 0 }, // 1->0
+                new Step { Forward = true, Previous = 1 }, // 2->3
+            };
+           
+            TestCalc.TestAugmentFlowsOnPath(path, 3, network);
+
+            Assert.AreEqual(3, network.FindEdge(0, 1).Flow);
+            Assert.AreEqual(3, network.FindEdge(1, 2).Flow);
+        }
+
+        [TestMethod]
+        public void WhenAugmentPathByTwo_ExpecBackwardsEdgesHaveFlowDecreased()
+        {
+            var edges = new[] 
+            {
+                Tuple.Create(1, 0, 10),
+                Tuple.Create(2, 1, 10),
+            };
+            var network = new FlowNetwork(edges, 0, 2);
+            network.AddFlow(1, 0, 5);
+            network.AddFlow(2, 1, 5);
+            var path = new[]
+            {
+                new Step { Forward = true, Previous = -1 }, // 0->X
+                new Step { Forward = false, Previous = 0 }, // 1->0
+                new Step { Forward = false, Previous = 1 }, // 2->1
+            };
+           
+            TestCalc.TestAugmentFlowsOnPath(path, 3, network);
+
+            Assert.AreEqual(2, network.FindEdge(1, 0).Flow);
+            Assert.AreEqual(2, network.FindEdge(2, 1).Flow);
+        }
+    }
+
     /// <summary>
     /// Uses a Ford-Fulkerson (depth-first search) approach to find an augmented path in the network.
     /// </summary>
-    public class FordFulkersonSearch : ISearchMethod
+    internal class FordFulkersonSearch : ISearchMethod
     {
         public IEnumerable<IList<Step>> FindAugmentingPath(FlowNetwork network)
         {
@@ -181,6 +300,30 @@ namespace MaxFlowInFlowNetworkFordFulkersonPathSearch
             Assert.AreEqual(0, path[1].Previous);
             Assert.AreEqual(-1, path[0].Previous);
         }
+
+        [TestMethod]
+        public void WhenOnlySinglePathWithCapacity_ExpectPathReturned()
+        {
+            var edges = new[]
+            {
+                Tuple.Create(0, 1, 5),
+                Tuple.Create(1, 2, 5),
+                Tuple.Create(2, 4, 5),
+                Tuple.Create(2, 3, 5),
+                Tuple.Create(4, 3, 5),
+            };
+            var network = new FlowNetwork(edges, 0, 3);
+            network.AddFlow(2, 3, 5);
+
+            var search = new FordFulkersonSearch();
+            var path = search.FindAugmentingPath(network).Single();
+
+            Assert.AreEqual(4, path[3].Previous);
+            Assert.AreEqual(2, path[4].Previous);
+            Assert.AreEqual(1, path[2].Previous);
+            Assert.AreEqual(0, path[1].Previous);
+            Assert.AreEqual(-1, path[0].Previous);
+        }
     }
 
     #endregion
@@ -237,7 +380,9 @@ namespace MaxFlowInFlowNetworkFordFulkersonPathSearch
                 .Max() + 1;
 
             // Initialize vertex collection;
-            Vertices = Enumerable.Range(0, TotalVertices).Select(x => { return new Vertex(); }).ToList();
+            Vertices = Enumerable.Range(0, TotalVertices)
+                .Select(x => { return new Vertex(); })
+                .ToList();
 
             // Populate edges
             foreach (var edge in edges)
