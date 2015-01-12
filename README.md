@@ -1,4 +1,4 @@
-CSharpExperiments
+C\# Experiments
 =================
 
 This is an archive of exploratory (A.K.A. throw away) code.  Nothing here is has been tested to any great degree so use at your own risk.
