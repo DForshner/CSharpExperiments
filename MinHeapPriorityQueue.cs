@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 // A heap based implementation of a min priority queue.
-// This should provide O(log(n)) time complexity for initial inserts and deletes 
-// and O(n) for the initial construction (heapify).
+// Time Complexity:  O(log(n)) for inserts and deletes and O(n) 
+// for the initial construction using heapify.
 
 namespace MinHeapPriorityQueue
 {
