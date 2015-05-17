@@ -3,7 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-// A greedy algorithm for minimizing the weighted sum of completion times.
+// Minimize the weighted sum of completion times
+// for a set of jobs with length and weight (value/priority).
+//
+// Two different greedy algorithms are included.
+// 1) Take the job with the lowest difference between the weight and the length each pass.
+// 2) Take the job with the lowest ratio between the weight and the length each pass.
 //
 // Jobs as read from a text file with the format:
 // [number_of_jobs]
@@ -14,9 +19,12 @@ namespace ScheduleJobsToMinimizeWeightedSumOfCompletionTime
 {
     public class Job
     {
-        public int Weight { get; private set; }
-        public int Length { get; private set; }
+        public readonly int Weight;
+
+        public readonly int Length;
+
         public int Difference { get { return Weight - Length; } }
+
         public decimal Ratio { get { return (decimal)Weight / (decimal)Length; } }
 
         public Job(int weight, int length)
@@ -28,8 +36,10 @@ namespace ScheduleJobsToMinimizeWeightedSumOfCompletionTime
 
     public class CompletedJob
     {
-        public Job Job { get; private set; }
-        public int CompletionTime { get; private set; }
+        public readonly Job Job;
+
+        public readonly int CompletionTime;
+
         public int WeightedCompletionTime { get { return Job.Weight * CompletionTime; } }
 
         public CompletedJob(Job job, int completionTime)
@@ -41,44 +51,81 @@ namespace ScheduleJobsToMinimizeWeightedSumOfCompletionTime
 
     public class Program 
     {
-        //static void Main(string[] args)
-        //{
-        //    var data = ReadFile();
+        static void Main(string[] args)
+        {
+            var jobs = ParseJobsFromFile(ReadFile());
 
-        //    var jobs = ParseJobsFromFile(data);
+            SimulateRunningJobsByDecreasingDifference(jobs);
 
-        //    var completedJobs = SimulateRunningJobs(jobs);
+            SimulateRunningJobsByDecreasingRatio(jobs);
 
-        //    foreach(var job in completedJobs)
-        //    {
-        //        Console.WriteLine("Weight: " + job.Job.Weight + 
-        //            " Lenth: " + job.Job.Length + 
-        //            " Diff: " + job.Job.Difference +
-        //            " Ratio: " + Math.Round(job.Job.Ratio, 4) +
-        //            " CT: " + job.CompletionTime +
-        //            " WCT: " + job.WeightedCompletionTime
-        //            );
-        //    }
+            Console.WriteLine("Done");
+            Console.ReadKey();
+        }
 
-        //    var sumOfWeightedCompletionTimes = completedJobs.Sum(x => (long)x.WeightedCompletionTime);
+        private static void SimulateRunningJobsByDecreasingDifference(IReadOnlyCollection<Job> jobs)
+        {
+            var completeJobs = ScheduleJobsByDecreasingDifference(jobs);
 
-        //    Console.WriteLine("\n\nWeighted Sum of Completion Times: " + sumOfWeightedCompletionTimes);
+            foreach (var job in completeJobs)
+            {
+                Console.WriteLine("Weight: " + job.Job.Weight +
+                    " Length: " + job.Job.Length +
+                    " Difference: " + job.Job.Difference +
+                    " Ratio: " + Math.Round(job.Job.Ratio, 4) +
+                    " CT: " + job.CompletionTime +
+                    " WCT: " + job.WeightedCompletionTime
+                    );
+            }
 
-        //    Console.WriteLine("Done");
-        //    Console.ReadKey();
-        //}
+            var sumOfWeightedCompletionTimes = completeJobs.Sum(x => (long)x.WeightedCompletionTime);
+            Console.WriteLine("\n\nWeighted Sum of Completion Times (Difference Method): " + sumOfWeightedCompletionTimes);
+        }
 
-        private static List<CompletedJob> SimulateRunningJobs(IEnumerable<Job> jobs)
+        /// <summary>
+        /// Schedule jobs by decreasing order of difference.  Break ties by picking the
+        /// job with the higher weight first.
+        /// </summary>
+        private static List<CompletedJob> ScheduleJobsByDecreasingDifference(IEnumerable<Job> jobs)
         {
             var currentTime = 0;
-            var completedJobs = jobs
+            return jobs
+                .OrderByDescending(x => x.Difference).ThenByDescending(x => x.Weight)
+                .Select(job =>
+                {
+                    currentTime += job.Length;
+                    return new CompletedJob(job, currentTime);
+                })
+                .ToList(); // Materialize so only evaluated a single time.
+        }
 
-                // Method 1 - Schedule jobs by decreasing order of difference.  Break ties by picking the
-                // job with the higher weight first.
-                //.OrderByDescending(x => x.Difference).ThenByDescending(x => x.Weight)
+        private static void SimulateRunningJobsByDecreasingRatio(IReadOnlyCollection<Job> jobs)
+        {
+            var completeJobs = ScheduleJobsByDecreasingRatio(jobs);
 
-                // Method 2 - Schedule jobs by decreasing order of ratio.  Break ties by picking the
-                // job with the higher weight first.
+            foreach (var job in completeJobs)
+            {
+                Console.WriteLine("Weight: " + job.Job.Weight +
+                    " Length: " + job.Job.Length +
+                    " Difference: " + job.Job.Difference +
+                    " Ratio: " + Math.Round(job.Job.Ratio, 4) +
+                    " CT: " + job.CompletionTime +
+                    " WCT: " + job.WeightedCompletionTime
+                    );
+            }
+
+            var sumOfWeightedCompletionTimes = completeJobs.Sum(x => (long)x.WeightedCompletionTime);
+            Console.WriteLine("\n\nWeighted Sum of Completion Times (Ratio Method): " + sumOfWeightedCompletionTimes);
+        }
+
+        /// <summary>
+        /// Schedule jobs by decreasing order of ratio.  Break ties by picking the
+        /// job with the higher weight first.
+        /// </summary>
+        private static List<CompletedJob> ScheduleJobsByDecreasingRatio(IEnumerable<Job> jobs)
+        {
+            var currentTime = 0;
+            return jobs
                 .OrderByDescending(x => x.Ratio).ThenByDescending(x => x.Weight)
 
                 .Select(job =>
@@ -87,11 +134,9 @@ namespace ScheduleJobsToMinimizeWeightedSumOfCompletionTime
                     return new CompletedJob(job, currentTime);
                 })
                 .ToList(); // Materialize so only evaluated a single time.
-
-            return completedJobs;
         }
 
-        private static IEnumerable<Job> ParseJobsFromFile(string data)
+        private static IReadOnlyCollection<Job> ParseJobsFromFile(string data)
         {
             var lines = data.Split('\n');
 
@@ -110,28 +155,27 @@ namespace ScheduleJobsToMinimizeWeightedSumOfCompletionTime
 
             if (jobs.Count() != numJobs)
             {
-                throw new Exception("Number of jobs processed does not match number of jobs listed in file header.");
+                throw new Exception("The number of jobs processed does not match number of jobs specified in the file header.");
             }
 
-            return jobs;
+            return jobs.ToList().AsReadOnly();
         }
 
         private static string ReadFile()
         {
-            var data = string.Empty;
             try
             {
-                using (var sr = new StreamReader("../../jobs.txt"))
+                using (var sr = new StreamReader("../../../jobs.txt"))
                 {
-                    data = sr.ReadToEnd();
+                    return sr.ReadToEnd();
                 }
             }
             catch (Exception e)
             {
-                Console.WriteLine("The file could not be read:");
+                Console.WriteLine("The file could not be read.");
                 Console.WriteLine(e.Message);
             }
-            return data;
+            return string.Empty;
         }
     }
 }
