@@ -6,6 +6,12 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 // Tries to match products to listings
 
+// I'm still poking on with this idea so the code is mess.  The basic idea so far is to:
+// 1) Normalize the strings
+// 2) Bucket/Group products and listings based on canonical product manufacturer names
+// 3) For each manufacturer's pair of buckets try and match using an exact model name match.
+// 4) For any listings that failed step 3 try and match model names within a levenstien distance of one.
+
 namespace NormalizedSubStringRecordLinkage
 {
     public class Product
