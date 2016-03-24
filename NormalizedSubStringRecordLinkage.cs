@@ -10,7 +10,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 // 1) Normalize the strings
 // 2) Bucket/Group products and listings based on canonical product manufacturer names
 // 3) For each manufacturer's pair of buckets try and match using an exact model name match.
-// 4) For any listings that failed step 3 try and match model names within a levenstien distance of one.
+// 4) For any listings that failed step 3 try and match model names within a Levenshtein edit distance of one.
 
 namespace NormalizedSubStringRecordLinkage
 {
