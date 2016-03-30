@@ -224,7 +224,7 @@ namespace AugmentedIntervalTree
     }
 
     [TestClass]
-    public class AnagramSubStringFinderTests
+    public class AugmentedIntervalTreeTests
     {
         [TestMethod]
         public void WhenInsertRoot_ExpectRootOnlyNode()
