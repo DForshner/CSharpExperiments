@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 
-namespace BrockReports
+namespace ExpressionHelpers
 {
     public static class ExpressionHelpers
     {
